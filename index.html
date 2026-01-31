@@ -4,102 +4,294 @@
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>Навигатор по знаниям — Елена Веселаго</title>
-  <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/@n8n/chat@latest/style.css">
   <style>
-    :root {
-      --chat--color-primary: #4a5568;
-      --chat--color-secondary: #edf2f7;
-      --chat--color-primary-shade-50: #2d3748;
-      --chat--color-primary-shade-100: #1a202c;
-      --chat--border-radius: 12px;
-      --chat--window--width: 420px;
-      --chat--window--height: 600px;
-    }
-
     * { margin: 0; padding: 0; box-sizing: border-box; }
 
     body {
       font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
-      background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+      background: #fff;
       min-height: 100vh;
-      display: flex;
-      align-items: center;
-      justify-content: center;
-      color: #fff;
+      color: #333;
     }
 
-    .landing {
+    .container {
+      max-width: 720px;
+      margin: 0 auto;
+      padding: 2rem 1.5rem;
+    }
+
+    /* Logo */
+    .logo {
       text-align: center;
-      max-width: 600px;
-      padding: 2rem;
-    }
-
-    .landing h1 {
-      font-size: 2.2rem;
-      margin-bottom: 0.5rem;
-      font-weight: 700;
-    }
-
-    .landing .subtitle {
-      font-size: 1.1rem;
-      opacity: 0.9;
       margin-bottom: 2rem;
-      line-height: 1.6;
     }
 
-    .landing .hint {
-      font-size: 0.95rem;
-      opacity: 0.7;
-      margin-top: 1rem;
+    .logo img {
+      width: 120px;
+      height: 120px;
     }
 
-    .landing .arrow {
-      font-size: 2rem;
-      margin-top: 1.5rem;
-      animation: bounce 2s infinite;
+    /* Search area */
+    .search-area {
+      margin-bottom: 2rem;
     }
 
-    @keyframes bounce {
-      0%, 100% { transform: translateY(0); }
-      50% { transform: translateY(10px); }
+    .search-box {
+      display: flex;
+      gap: 8px;
+    }
+
+    .search-box input {
+      flex: 1;
+      padding: 14px 18px;
+      font-size: 16px;
+      border: 2px solid #ddd;
+      border-radius: 10px;
+      outline: none;
+      transition: border-color 0.2s;
+    }
+
+    .search-box input:focus {
+      border-color: #c0392b;
+    }
+
+    .search-box button {
+      padding: 14px 28px;
+      font-size: 16px;
+      font-weight: 600;
+      background: #c0392b;
+      color: #fff;
+      border: none;
+      border-radius: 10px;
+      cursor: pointer;
+      transition: background 0.2s;
+      white-space: nowrap;
+    }
+
+    .search-box button:hover {
+      background: #a93226;
+    }
+
+    .search-box button:disabled {
+      background: #ccc;
+      cursor: not-allowed;
+    }
+
+    /* Response area */
+    .response-area {
+      min-height: 200px;
+      margin-bottom: 2rem;
+    }
+
+    .response-area .message {
+      padding: 1.2rem 1.5rem;
+      background: #fafafa;
+      border-radius: 12px;
+      line-height: 1.7;
+      font-size: 15px;
+      white-space: pre-wrap;
+    }
+
+    .response-area .message a {
+      color: #c0392b;
+      text-decoration: none;
+    }
+
+    .response-area .message a:hover {
+      text-decoration: underline;
+    }
+
+    .loading {
+      text-align: center;
+      padding: 2rem;
+      color: #999;
+    }
+
+    .loading .dots::after {
+      content: '';
+      animation: dots 1.5s steps(4, end) infinite;
+    }
+
+    @keyframes dots {
+      0% { content: ''; }
+      25% { content: '.'; }
+      50% { content: '..'; }
+      75% { content: '...'; }
+    }
+
+    .error {
+      padding: 1rem 1.5rem;
+      background: #fff5f5;
+      border: 1px solid #fed7d7;
+      border-radius: 12px;
+      color: #c53030;
+    }
+
+    /* 4 placeholder blocks for future */
+    .blocks {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 1rem;
+      margin-bottom: 2rem;
+    }
+
+    .block {
+      /* invisible for now */
+      display: none;
+      padding: 2rem;
+      background: #f7f7f7;
+      border-radius: 12px;
+      text-align: center;
+    }
+
+    /* Conversation history */
+    .history {
+      display: flex;
+      flex-direction: column;
+      gap: 1rem;
+    }
+
+    .history-item {
+      border-bottom: 1px solid #f0f0f0;
+      padding-bottom: 1rem;
+    }
+
+    .history-item:last-child {
+      border-bottom: none;
+    }
+
+    .history-item .question {
+      font-weight: 600;
+      margin-bottom: 0.5rem;
+      color: #555;
+    }
+
+    .history-item .answer {
+      padding: 1rem 1.2rem;
+      background: #fafafa;
+      border-radius: 10px;
+      line-height: 1.7;
+      font-size: 15px;
+      white-space: pre-wrap;
+    }
+
+    .history-item .answer a {
+      color: #c0392b;
+      text-decoration: none;
+    }
+
+    .history-item .answer a:hover {
+      text-decoration: underline;
     }
   </style>
 </head>
 <body>
 
-  <div class="landing">
-    <h1>Навигатор по знаниям</h1>
-    <p class="subtitle">
-      База знаний по расстановкам, полевой терапии и шаманизму.<br>
-      Автор материалов — Елена Веселаго.
-    </p>
-    <p class="hint">Нажмите на иконку чата справа внизу, чтобы задать вопрос.</p>
-    <div class="arrow">↘</div>
+  <div class="container">
+    <!-- Logo -->
+    <div class="logo">
+      <img src="logo.png" alt="Навигатор по знаниям">
+    </div>
+
+    <!-- Search -->
+    <div class="search-area">
+      <div class="search-box">
+        <input type="text" id="query" placeholder="Задайте вопрос о расстановках, полевой терапии или шаманизме..." autofocus>
+        <button id="btn" onclick="sendQuestion()">Найти</button>
+      </div>
+    </div>
+
+    <!-- 4 invisible blocks for future -->
+    <div class="blocks">
+      <div class="block" id="block1"></div>
+      <div class="block" id="block2"></div>
+      <div class="block" id="block3"></div>
+      <div class="block" id="block4"></div>
+    </div>
+
+    <!-- Response -->
+    <div class="response-area" id="response"></div>
+
+    <!-- Conversation history -->
+    <div class="history" id="history"></div>
   </div>
 
-  <script type="module">
-    import { createChat } from 'https://cdn.jsdelivr.net/npm/@n8n/chat@latest/chat.bundle.js';
+  <script>
+    const WEBHOOK_URL = 'https://n8n.valoryx.org/webhook/3b619514-aa9c-4d73-a3cf-d0b5f9496d05/chat';
+    let sessionId = crypto.randomUUID();
 
-    createChat({
-      webhookUrl: 'https://n8n.valoryx.org/webhook/3b619514-aa9c-4d73-a3cf-d0b5f9496d05/chat',
-      mode: 'window',
-      chatInputKey: 'chatInput',
-      chatSessionKey: 'sessionId',
-      showWelcomeScreen: false,
-      defaultLanguage: 'en',
-      initialMessages: [
-        'Здравствуйте! Задайте любой вопрос о расстановках, полевой терапии или шаманизме.'
-      ],
-      i18n: {
-        en: {
-          title: 'Навигатор по знаниям',
-          subtitle: 'Расстановки · Полевая терапия · Шаманизм',
-          inputPlaceholder: 'Введите ваш вопрос...',
-          footer: '',
-          getStarted: 'Начать',
-        }
-      }
+    const input = document.getElementById('query');
+    const btn = document.getElementById('btn');
+    const responseArea = document.getElementById('response');
+    const historyArea = document.getElementById('history');
+
+    input.addEventListener('keydown', (e) => {
+      if (e.key === 'Enter' && !btn.disabled) sendQuestion();
     });
+
+    async function sendQuestion() {
+      const question = input.value.trim();
+      if (!question) return;
+
+      btn.disabled = true;
+      btn.textContent = 'Ищу...';
+      input.disabled = true;
+
+      // Move previous response to history
+      const prevResponse = responseArea.querySelector('.message');
+      if (prevResponse && prevResponse.dataset.question) {
+        const item = document.createElement('div');
+        item.className = 'history-item';
+        item.innerHTML = `<div class="question">${prevResponse.dataset.question}</div><div class="answer">${prevResponse.innerHTML}</div>`;
+        historyArea.prepend(item);
+      }
+
+      responseArea.innerHTML = '<div class="loading">Ищу ответ<span class="dots"></span></div>';
+
+      try {
+        const res = await fetch(WEBHOOK_URL, {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({
+            action: 'sendMessage',
+            chatInput: question,
+            sessionId: sessionId
+          })
+        });
+
+        if (!res.ok) throw new Error(`Ошибка сервера: ${res.status}`);
+
+        const data = await res.json();
+        const answer = data.output || data.text || data.response || JSON.stringify(data);
+
+        const msg = document.createElement('div');
+        msg.className = 'message';
+        msg.dataset.question = question;
+        msg.innerHTML = formatResponse(answer);
+        responseArea.innerHTML = '';
+        responseArea.appendChild(msg);
+      } catch (err) {
+        responseArea.innerHTML = `<div class="error">Не удалось получить ответ. Попробуйте позже.<br><small>${err.message}</small></div>`;
+      }
+
+      btn.disabled = false;
+      btn.textContent = 'Найти';
+      input.disabled = false;
+      input.value = '';
+      input.focus();
+    }
+
+    function formatResponse(text) {
+      // Convert markdown links [text](url) to HTML
+      text = text.replace(/\[([^\]]+)\]\(([^)]+)\)/g, '<a href="$2" target="_blank">$1</a>');
+      // Convert **bold** to <strong>
+      text = text.replace(/\*\*([^*]+)\*\*/g, '<strong>$1</strong>');
+      // Convert *italic* to <em>
+      text = text.replace(/\*([^*]+)\*/g, '<em>$1</em>');
+      // Convert newlines to <br>
+      text = text.replace(/\n/g, '<br>');
+      return text;
+    }
   </script>
 
 </body>
