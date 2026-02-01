@@ -84,31 +84,6 @@
       transform: none;
     }
 
-    /* Suggested queries */
-    .suggestions {
-      display: flex;
-      flex-wrap: wrap;
-      gap: 6px;
-      margin-top: 10px;
-    }
-
-    .suggestion-chip {
-      padding: 5px 12px;
-      background: #fff;
-      border: 1px solid #e0dcd8;
-      border-radius: 20px;
-      font-size: 13px;
-      color: #666;
-      cursor: pointer;
-      transition: all 0.15s;
-    }
-
-    .suggestion-chip:hover {
-      border-color: #b5453a;
-      color: #b5453a;
-      background: #fdf6f5;
-    }
-
     /* Response area */
     .response-area {
       min-height: 60px;
@@ -517,12 +492,6 @@
         <input type="text" id="query" placeholder="Задайте вопрос о расстановках, полевой терапии или шаманизме..." autofocus>
         <button id="btn" onclick="sendQuestion()">Найти</button>
       </div>
-      <div class="suggestions" id="suggestions">
-        <span class="suggestion-chip" onclick="searchTag(this.textContent)">что такое поле</span>
-        <span class="suggestion-chip" onclick="searchTag(this.textContent)">отношения с отцом</span>
-        <span class="suggestion-chip" onclick="searchTag(this.textContent)">шаманская работа</span>
-        <span class="suggestion-chip" onclick="searchTag(this.textContent)">детские чувства</span>
-      </div>
     </div>
 
     <!-- Response -->
@@ -545,8 +514,6 @@
     const btn = document.getElementById('btn');
     const responseArea = document.getElementById('response');
     const historyArea = document.getElementById('history');
-    const suggestionsArea = document.getElementById('suggestions');
-
     let lastQuestion = '';
     let lastAnswerHtml = '';
 
@@ -723,12 +690,7 @@
     function renderNoResults() {
       return '<div class="no-results">'
         + '<p>По этому запросу ничего не найдено.</p>'
-        + '<div class="try-these">Попробуйте:</div>'
-        + '<div class="suggestions" style="justify-content:center;margin-top:8px;">'
-        + '<span class="suggestion-chip" onclick="searchTag(this.textContent)">расстановки</span>'
-        + '<span class="suggestion-chip" onclick="searchTag(this.textContent)">полевая терапия</span>'
-        + '<span class="suggestion-chip" onclick="searchTag(this.textContent)">родовые вопросы</span>'
-        + '</div>'
+        + '<p>Попробуйте переформулировать вопрос или использовать другие ключевые слова.</p>'
         + '</div>';
     }
 
@@ -759,7 +721,6 @@
       btn.disabled = true;
       btn.textContent = 'Ищу...';
       input.disabled = true;
-      suggestionsArea.style.display = 'none';
 
       // Move previous response to history
       if (lastQuestion && lastAnswerHtml) {
@@ -788,8 +749,29 @@
         if (!res.ok) throw new Error('Ошибка сервера: ' + res.status);
 
         const data = await res.json();
-        const rawOutput = data.output || data.text || data.response || JSON.stringify(data);
-        const parsed = extractJSON(rawOutput);
+
+        // Robust parsing: handle all possible response formats
+        let parsed = null;
+
+        // Case 1: data itself has citations (direct object response)
+        if (data && typeof data === 'object' && (data.citations || data.no_results !== undefined)) {
+          parsed = data;
+        }
+        // Case 2: data.output is already an object with citations
+        else if (data.output && typeof data.output === 'object' && (data.output.citations || data.output.no_results !== undefined)) {
+          parsed = data.output;
+        }
+        // Case 3: data.output/text/response is a JSON string
+        else {
+          const rawOutput = data.output || data.text || data.response || '';
+          if (typeof rawOutput === 'string' && rawOutput.length > 0) {
+            parsed = extractJSON(rawOutput);
+          }
+          // Case 4: whole data as string
+          if (!parsed) {
+            parsed = extractJSON(JSON.stringify(data));
+          }
+        }
 
         let html;
         if (parsed && (parsed.citations || parsed.no_results !== undefined)) {
@@ -799,7 +781,8 @@
             html = renderStructured(parsed);
           }
         } else {
-          html = renderFallback(typeof rawOutput === 'string' ? rawOutput : JSON.stringify(rawOutput));
+          const fallbackText = data.output || data.text || data.response || JSON.stringify(data);
+          html = renderFallback(typeof fallbackText === 'string' ? fallbackText : JSON.stringify(fallbackText));
         }
 
         lastAnswerHtml = html;
